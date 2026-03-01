@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+venv/
+.venv/
+env/
+
+# Data & Models
+backend/data/
+backend/saved_models/*.keras
+backend/saved_models/*.h5
+*.pkl
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.production
+
+# SQLite
+*.db
+*.sqlite3
+
+# Uploads
+backend/uploads/
+
+# Jupyter
+.ipynb_checkpoints/
