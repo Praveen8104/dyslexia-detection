@@ -1,0 +1,14 @@
+Flask==3.0.0
+Flask-CORS==4.0.0
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.23
+tensorflow==2.15.0
+opencv-python-headless==4.8.1.78
+librosa==0.10.1
+soundfile==0.12.1
+numpy==1.24.3
+Pillow==10.1.0
+gunicorn==21.2.0
+python-dotenv==1.0.0
+Werkzeug==3.0.1
+pytest==7.4.3
