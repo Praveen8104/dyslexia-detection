@@ -77,3 +77,8 @@ export async function getHistory(userId: number): Promise<TestSession[]> {
   const res = await api.get(`/results/history/${userId}`);
   return res.data;
 }
+
+export async function getAllSessions(): Promise<(TestSession & { user_name: string; user_age: number | null })[]> {
+  const res = await api.get('/results/all');
+  return res.data;
+}

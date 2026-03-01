@@ -26,8 +26,8 @@ export default function Navbar() {
               className="text-2xl font-bold"
               style={{ color: "#6C63FF" }}
             >
-              Dyslexy
-              <span style={{ color: "#FF6584" }}>Check</span>
+              Dyslex
+              <span style={{ color: "#FF6584" }}>AI</span>
             </span>
           </Link>
 

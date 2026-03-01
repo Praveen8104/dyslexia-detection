@@ -23,7 +23,10 @@ def create_app(testing=False):
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "handwriting"), exist_ok=True)
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "audio"), exist_ok=True)
 
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    allowed_origins = os.getenv(
+        "CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    ).split(",")
+    CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
     db.init_app(app)
 
     from app.routes.users import users_bp

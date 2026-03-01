@@ -14,14 +14,14 @@ interface SpeechResultProps {
 }
 
 function getRiskColor(score: number): string {
-  if (score <= 0.3) return "#43E97B"; // accent / low risk
-  if (score <= 0.6) return "#FFB347"; // warning / medium risk
+  if (score <= 30) return "#43E97B"; // accent / low risk
+  if (score <= 60) return "#FFB347"; // warning / medium risk
   return "#FF6584"; // secondary / high risk
 }
 
 function getRiskLabel(score: number): string {
-  if (score <= 0.3) return "Low Risk";
-  if (score <= 0.6) return "Moderate Risk";
+  if (score <= 30) return "Low Risk";
+  if (score <= 60) return "Moderate Risk";
   return "High Risk";
 }
 
@@ -95,7 +95,7 @@ export default function SpeechResult({ result }: SpeechResultProps) {
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-gray-600">Risk Score</span>
           <span className="font-bold" style={{ color: riskColor }}>
-            {riskLabel} ({(result.risk_score * 100).toFixed(0)}%)
+            {riskLabel} ({result.risk_score.toFixed(0)}%)
           </span>
         </div>
         <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
@@ -103,7 +103,7 @@ export default function SpeechResult({ result }: SpeechResultProps) {
             className="h-full rounded-full"
             style={{ backgroundColor: riskColor }}
             initial={{ width: 0 }}
-            animate={{ width: `${result.risk_score * 100}%` }}
+            animate={{ width: `${Math.min(result.risk_score, 100)}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </div>

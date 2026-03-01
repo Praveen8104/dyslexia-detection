@@ -114,10 +114,9 @@ export default function Home() {
             custom={0}
             className="text-4xl font-extrabold leading-tight text-gray-900 sm:text-5xl lg:text-6xl"
           >
-            Dyslexia{" "}
-            <span className="text-[#6C63FF]">Screening</span>{" "}
-            Made{" "}
-            <span className="text-[#FF6584]">Fun</span>
+            Dyslex
+            <span className="text-[#6C63FF]">AI</span>{" "}
+            <span className="text-[#FF6584]">Screening</span>
           </motion.h1>
 
           <motion.p

@@ -31,7 +31,8 @@ class SpeechPredictor:
                 "Using rule-based predictions only."
             )
 
-    def predict(self, audio_path: str, expected_text: str = "") -> dict:
+    def predict(self, audio_path: str, expected_text: str = "",
+                child_age: int = None) -> dict:
         from app.ml.speech.audio_processor import (
             load_audio, compute_silence_ratio,
             count_hesitations, estimate_reading_speed,
@@ -39,6 +40,14 @@ class SpeechPredictor:
         from app.ml.speech.feature_extractor import extract_mfcc_features
 
         signal, sr = load_audio(audio_path)
+
+        # Validate audio duration (at least 1 second)
+        duration_sec = len(signal) / sr
+        if duration_sec < 1.0:
+            raise ValueError(
+                f"Audio too short ({duration_sec:.1f}s). "
+                "Please record for at least 2 seconds."
+            )
 
         # Extract heuristic features
         word_count = len(expected_text.split()) if expected_text else 10
@@ -52,9 +61,9 @@ class SpeechPredictor:
             features_batch = np.expand_dims(features, axis=0)
             probs = self.model.predict(features_batch, verbose=0)[0]
         else:
-            # Rule-based fallback
+            # Rule-based fallback using age-appropriate thresholds
             probs = self._rule_based_score(
-                reading_speed, hesitation_count, silence_ratio
+                reading_speed, hesitation_count, silence_ratio, child_age
             )
 
         pred_idx = int(np.argmax(probs))
@@ -74,14 +83,18 @@ class SpeechPredictor:
         }
 
     def _rule_based_score(self, wpm: float, hesitations: int,
-                          silence_ratio: float) -> np.ndarray:
+                          silence_ratio: float,
+                          child_age: int = None) -> np.ndarray:
         """Compute risk probability using rule-based heuristics."""
         risk = 0.0
 
-        # Slow reading speed
-        if wpm < 80:
+        # Use age-appropriate WPM threshold if age is provided
+        wpm_threshold = AGE_WPM_THRESHOLDS.get(child_age, 100)
+        wpm_warning = wpm_threshold * 0.8  # 80% of threshold = mild concern
+
+        if wpm < wpm_warning:
             risk += 0.3
-        elif wpm < 100:
+        elif wpm < wpm_threshold:
             risk += 0.15
 
         # Many hesitations

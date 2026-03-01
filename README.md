@@ -1,4 +1,4 @@
-# DyslexyCheck - Dyslexia Detection Web Application
+# DyslexAI - Dyslexia Detection Web Application
 
 A web-based dyslexia screening tool for children (ages 6-12) that detects dyslexia indicators through **handwriting image analysis** (CNN) and **speech analysis** (audio processing + ML).
 

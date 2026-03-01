@@ -41,6 +41,8 @@ export interface TestSession {
   created_at: string;
   handwriting_tests: HandwritingTestRecord[];
   speech_tests: SpeechTestRecord[];
+  user_name?: string;
+  user_age?: number | null;
 }
 
 export interface HandwritingTestRecord {
