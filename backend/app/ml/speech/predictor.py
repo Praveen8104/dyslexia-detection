@@ -14,6 +14,10 @@ AGE_WPM_THRESHOLDS = {
     6: 60, 7: 80, 8: 100, 9: 110, 10: 120, 11: 130, 12: 140,
 }
 
+# Weights for combining ML and rule-based scores
+ML_WEIGHT = 0.35
+HEURISTIC_WEIGHT = 0.65
+
 
 class SpeechPredictor:
     def __init__(self):
@@ -55,16 +59,22 @@ class SpeechPredictor:
         hesitation_count = count_hesitations(signal, sr)
         silence_ratio = compute_silence_ratio(signal, sr)
 
-        # ML-based prediction
+        # Rule-based risk score (always computed)
+        heuristic_probs = self._rule_based_score(
+            reading_speed, hesitation_count, silence_ratio, child_age
+        )
+
+        # Combine ML + heuristics if model is available
         if self.model is not None:
             features = extract_mfcc_features(signal, sr)
             features_batch = np.expand_dims(features, axis=0)
-            probs = self.model.predict(features_batch, verbose=0)[0]
+            ml_probs = self.model.predict(features_batch, verbose=0)[0]
+
+            # Weighted blend: heuristics are more reliable for dyslexia
+            # since the ML model was trained on dysarthria (different domain)
+            probs = (ML_WEIGHT * ml_probs) + (HEURISTIC_WEIGHT * heuristic_probs)
         else:
-            # Rule-based fallback using age-appropriate thresholds
-            probs = self._rule_based_score(
-                reading_speed, hesitation_count, silence_ratio, child_age
-            )
+            probs = heuristic_probs
 
         pred_idx = int(np.argmax(probs))
         confidence = float(probs[pred_idx])
@@ -92,22 +102,29 @@ class SpeechPredictor:
         wpm_threshold = AGE_WPM_THRESHOLDS.get(child_age, 100)
         wpm_warning = wpm_threshold * 0.8  # 80% of threshold = mild concern
 
-        if wpm < wpm_warning:
-            risk += 0.3
+        # Reading speed assessment (biggest indicator)
+        if wpm < wpm_warning * 0.5:
+            risk += 0.35  # Very slow
+        elif wpm < wpm_warning:
+            risk += 0.25
         elif wpm < wpm_threshold:
-            risk += 0.15
+            risk += 0.12
 
-        # Many hesitations
-        if hesitations >= 5:
-            risk += 0.3
-        elif hesitations >= 3:
-            risk += 0.15
+        # Hesitation count
+        if hesitations >= 6:
+            risk += 0.25
+        elif hesitations >= 4:
+            risk += 0.18
+        elif hesitations >= 2:
+            risk += 0.10
 
-        # High silence ratio
-        if silence_ratio > 0.5:
-            risk += 0.2
-        elif silence_ratio > 0.3:
-            risk += 0.1
+        # Silence ratio
+        if silence_ratio > 0.6:
+            risk += 0.20
+        elif silence_ratio > 0.4:
+            risk += 0.12
+        elif silence_ratio > 0.25:
+            risk += 0.05
 
         risk = min(risk, 0.95)
         return np.array([1.0 - risk, risk])

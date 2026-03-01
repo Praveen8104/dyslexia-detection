@@ -1,5 +1,4 @@
 import os
-import tempfile
 import numpy as np
 import librosa
 from pydub import AudioSegment
@@ -27,8 +26,12 @@ def load_audio(audio_path: str, sr: int = 16000) -> tuple:
 
 
 def detect_silence_segments(signal: np.ndarray, sr: int = 16000,
-                            threshold_db: float = -40) -> list:
-    """Detect segments of silence in audio."""
+                            threshold_db: float = -35) -> list:
+    """Detect segments of speech (non-silence) in audio.
+
+    Uses a threshold of -35 dB which works well for browser microphone
+    recordings where background noise is common.
+    """
     intervals = librosa.effects.split(signal, top_db=abs(threshold_db))
     return intervals
 
@@ -45,8 +48,13 @@ def compute_silence_ratio(signal: np.ndarray, sr: int = 16000) -> float:
 
 
 def count_hesitations(signal: np.ndarray, sr: int = 16000,
-                      min_pause_sec: float = 1.5) -> int:
-    """Count number of pauses longer than min_pause_sec."""
+                      min_pause_sec: float = 0.8) -> int:
+    """Count number of pauses longer than min_pause_sec.
+
+    A pause of 0.8s+ during reading is considered a hesitation.
+    This is more sensitive than the previous 1.5s threshold,
+    which missed many real hesitations during children's reading.
+    """
     intervals = detect_silence_segments(signal, sr)
     if len(intervals) <= 1:
         return 0
@@ -63,10 +71,22 @@ def count_hesitations(signal: np.ndarray, sr: int = 16000,
 
 def estimate_reading_speed(signal: np.ndarray, sr: int = 16000,
                            expected_word_count: int = 10) -> float:
-    """Estimate reading speed in words per minute."""
-    duration_sec = len(signal) / sr
-    if duration_sec == 0:
+    """Estimate reading speed in words per minute.
+
+    Uses only the speech duration (excluding leading/trailing silence)
+    for a more accurate WPM calculation.
+    """
+    intervals = detect_silence_segments(signal, sr)
+    if len(intervals) == 0:
         return 0.0
 
-    duration_min = duration_sec / 60.0
+    # Use time from first speech to last speech (not total recording)
+    first_speech_start = intervals[0][0]
+    last_speech_end = intervals[-1][1]
+    speech_span_sec = (last_speech_end - first_speech_start) / sr
+
+    if speech_span_sec < 0.5:
+        return 0.0
+
+    duration_min = speech_span_sec / 60.0
     return expected_word_count / duration_min
