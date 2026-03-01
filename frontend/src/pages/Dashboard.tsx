@@ -89,7 +89,7 @@ export default function Dashboard() {
       : undefined;
 
   return (
-    <div className="min-h-screen bg-[#F0F4FF] font-[Comic_Neue]">
+    <div className="min-h-screen bg-[#F0F4FF] ">
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
         {/* Header */}
         <motion.div

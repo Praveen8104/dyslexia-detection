@@ -10,7 +10,7 @@ export default function ProgressBar({ currentStep, totalSteps, labels }: Progres
   const percentage = Math.min((currentStep / totalSteps) * 100, 100);
 
   return (
-    <div className="w-full font-[Comic_Neue]">
+    <div className="w-full ">
       {/* Step indicators */}
       {labels && labels.length > 0 && (
         <div className="mb-3 flex justify-between">

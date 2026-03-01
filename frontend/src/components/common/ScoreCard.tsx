@@ -23,7 +23,7 @@ export default function ScoreCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 shadow-lg font-[Comic_Neue]"
+      className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 shadow-lg "
     >
       {/* Circular progress */}
       <div className="relative h-36 w-36">

@@ -97,7 +97,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F4FF] font-[Comic_Neue]">
+    <div className="min-h-screen bg-[#F0F4FF] ">
       {/* Hero Section */}
       <section className="relative overflow-hidden px-4 pb-16 pt-20 text-center sm:px-6 lg:px-8">
         {/* Decorative blobs */}

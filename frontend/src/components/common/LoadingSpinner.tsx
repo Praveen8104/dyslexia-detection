@@ -8,7 +8,7 @@ export default function LoadingSpinner({ message }: LoadingSpinnerProps) {
   const dotColors = ["#6C63FF", "#FF6584", "#43E97B", "#FFB347"];
 
   return (
-    <div className="flex flex-col items-center justify-center gap-6 py-12 font-[Comic_Neue]">
+    <div className="flex flex-col items-center justify-center gap-6 py-12 ">
       {/* Bouncing dots */}
       <div className="flex items-center gap-3">
         {dotColors.map((color, i) => (

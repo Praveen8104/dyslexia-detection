@@ -36,7 +36,7 @@ export default function SpeechTest() {
   // Redirect if no session
   if (!sessionId) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F0F4FF] font-[Comic_Neue]">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F0F4FF] ">
         <p className="mb-4 text-lg font-semibold text-gray-600">No active session found.</p>
         <button
           onClick={() => navigate("/")}
@@ -86,7 +86,7 @@ export default function SpeechTest() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F4FF] font-[Comic_Neue]">
+    <div className="min-h-screen bg-[#F0F4FF] ">
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         {/* Progress */}
         <ProgressBar currentStep={2} totalSteps={3} labels={STEP_LABELS} />

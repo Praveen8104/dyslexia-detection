@@ -1,10 +1,28 @@
+import os
+import tempfile
 import numpy as np
 import librosa
+from pydub import AudioSegment
+
+
+def _convert_to_wav(audio_path: str) -> str:
+    """Convert any audio format to WAV using pydub/ffmpeg."""
+    wav_path = audio_path.rsplit(".", 1)[0] + "_converted.wav"
+    audio = AudioSegment.from_file(audio_path)
+    audio = audio.set_channels(1).set_frame_rate(16000)
+    audio.export(wav_path, format="wav")
+    return wav_path
 
 
 def load_audio(audio_path: str, sr: int = 16000) -> tuple:
     """Load audio file and return signal and sample rate."""
-    signal, sample_rate = librosa.load(audio_path, sr=sr)
+    try:
+        signal, sample_rate = librosa.load(audio_path, sr=sr)
+    except Exception:
+        # Convert non-WAV formats (WebM, Ogg, etc.) to WAV first
+        wav_path = _convert_to_wav(audio_path)
+        signal, sample_rate = librosa.load(wav_path, sr=sr)
+        os.remove(wav_path)
     return signal, sample_rate
 
 
