@@ -34,15 +34,22 @@ class HandwritingPredictor:
             )
 
     def predict(self, image_path: str) -> dict:
-        from app.ml.handwriting.preprocessor import preprocess_image
+        from app.ml.handwriting.preprocessor import preprocess_image, IMG_SIZE
 
         img = preprocess_image(image_path)
-        img_batch = np.expand_dims(img, axis=0)
 
         # Always compute heuristic score from the original image
         heuristic_probs, analysis = self._analyze_handwriting(image_path)
 
         if self.model is not None:
+            # Match preprocessed image to model's expected input shape
+            model_h = self.model.input_shape[1]
+            if model_h != IMG_SIZE:
+                img_resized = cv2.resize(img[:, :, 0], (model_h, model_h))
+                img_resized = np.expand_dims(img_resized, axis=-1)
+            else:
+                img_resized = img
+            img_batch = np.expand_dims(img_resized, axis=0)
             ml_probs = self.model.predict(img_batch, verbose=0)[0]
             # Blend: heuristics weighted more since model trained on
             # individual 32x32 letters, not full handwriting photos

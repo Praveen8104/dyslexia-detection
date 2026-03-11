@@ -1,14 +1,14 @@
 import cv2
 import numpy as np
 
-IMG_SIZE = 128
+IMG_SIZE = 224
 
 
 def preprocess_image(image_path: str) -> np.ndarray:
     """Preprocess handwriting image for CNN input.
 
-    Pipeline: Grayscale -> Otsu binarization -> Median blur -> Resize -> Normalize
-    Returns: numpy array of shape (128, 128, 1)
+    Pipeline: Grayscale -> CLAHE -> Otsu binarization -> Median blur -> Resize -> Normalize
+    Returns: numpy array of shape (224, 224, 1)
     """
     img = cv2.imread(image_path)
     if img is None:
@@ -17,8 +17,12 @@ def preprocess_image(image_path: str) -> np.ndarray:
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    # CLAHE for better contrast normalization
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced = clahe.apply(gray)
+
     # Otsu's binarization
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    _, binary = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Median blur to reduce noise
     blurred = cv2.medianBlur(binary, 3)

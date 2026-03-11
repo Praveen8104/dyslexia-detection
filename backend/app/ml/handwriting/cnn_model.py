@@ -1,27 +1,28 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras import layers, regularizers
 
 
 def build_handwriting_model(num_classes: int = 3) -> keras.Model:
-    """Build MobileNetV2-based handwriting classification model.
+    """Build EfficientNetB0-based handwriting classification model.
 
     Architecture:
-    - Input: 128x128x1 grayscale
-    - Conv2D to expand to 3 channels (for MobileNetV2 compatibility)
-    - MobileNetV2 (pretrained on ImageNet, frozen base)
+    - Input: 224x224x1 grayscale
+    - Conv2D to expand to 3 channels (for EfficientNet compatibility)
+    - EfficientNetB0 (pretrained on ImageNet, frozen base)
     - GlobalAveragePooling2D
-    - Dense(128, relu) + Dropout(0.3)
+    - Dense(256, relu, L2) + BatchNorm + Dropout(0.4)
+    - Dense(128, relu, L2) + Dropout(0.3)
     - Dense(num_classes, softmax)
     """
-    inputs = keras.Input(shape=(128, 128, 1))
+    inputs = keras.Input(shape=(224, 224, 1))
 
     # Expand grayscale to 3 channels
     x = layers.Conv2D(3, (1, 1), padding="same", name="channel_expand")(inputs)
 
-    # MobileNetV2 backbone
-    base_model = keras.applications.MobileNetV2(
-        input_shape=(128, 128, 3),
+    # EfficientNetB0 backbone (better accuracy than MobileNetV2 at similar cost)
+    base_model = keras.applications.EfficientNetB0(
+        input_shape=(224, 224, 3),
         include_top=False,
         weights="imagenet",
     )
@@ -29,23 +30,30 @@ def build_handwriting_model(num_classes: int = 3) -> keras.Model:
 
     x = base_model(x, training=False)
     x = layers.GlobalAveragePooling2D()(x)
-    x = layers.Dense(128, activation="relu")(x)
+
+    # Deeper classification head with regularization
+    x = layers.Dense(256, kernel_regularizer=regularizers.L2(1e-4))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Dropout(0.4)(x)
+
+    x = layers.Dense(128, activation="relu",
+                     kernel_regularizer=regularizers.L2(1e-4))(x)
     x = layers.Dropout(0.3)(x)
+
     outputs = layers.Dense(num_classes, activation="softmax")(x)
 
     model = keras.Model(inputs, outputs, name="handwriting_classifier")
     return model
 
 
-def fine_tune_model(model: keras.Model, unfreeze_layers: int = 30):
-    """Unfreeze the last N layers of MobileNetV2 for fine-tuning."""
-    base = model.layers[1] if hasattr(model.layers[1], 'layers') else None
-    if base is None:
-        # Find MobileNetV2 in the model
-        for layer in model.layers:
-            if hasattr(layer, 'layers') and len(layer.layers) > 10:
-                base = layer
-                break
+def fine_tune_model(model: keras.Model, unfreeze_layers: int = 40):
+    """Unfreeze the last N layers of the base model for fine-tuning."""
+    base = None
+    for layer in model.layers:
+        if hasattr(layer, 'layers') and len(layer.layers) > 10:
+            base = layer
+            break
 
     if base:
         base.trainable = True
