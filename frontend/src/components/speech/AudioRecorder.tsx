@@ -24,6 +24,7 @@ export default function AudioRecorder({
     duration,
     audioBlob,
     audioUrl,
+    error: micError,
     startRecording,
     stopRecording,
     resetRecording,
@@ -108,6 +109,17 @@ export default function AudioRecorder({
           </p>
         )}
       </div>
+
+      {/* Microphone error */}
+      {micError && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md rounded-lg bg-[#FF6584]/10 px-4 py-3 text-center text-sm font-medium text-[#FF6584]"
+        >
+          {micError}
+        </motion.div>
+      )}
 
       {/* Playback and reset */}
       {audioUrl && !isRecording && (

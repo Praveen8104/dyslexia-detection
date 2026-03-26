@@ -7,6 +7,7 @@ interface ImageUploaderProps {
 }
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImageSelected,
@@ -15,11 +16,18 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
     (file: File) => {
+      setFileError(null);
       if (!ACCEPTED_TYPES.includes(file.type)) {
+        setFileError("Invalid file type. Please upload a PNG or JPG image.");
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setFileError("File too large. Maximum size is 10 MB.");
         return;
       }
       setFileName(file.name);
@@ -187,6 +195,17 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* File validation error */}
+      {fileError && (
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 rounded-lg bg-[#FF6584]/10 px-4 py-2 text-center text-sm font-medium text-[#FF6584]"
+        >
+          {fileError}
+        </motion.p>
+      )}
     </div>
   );
 };

@@ -19,7 +19,8 @@ const READING_PROMPTS = [
 
 export default function SpeechTest() {
   const navigate = useNavigate();
-  const sessionId = Number(sessionStorage.getItem("session_id"));
+  const sessionIdStr = sessionStorage.getItem("session_id");
+  const sessionId = sessionIdStr ? Number(sessionIdStr) : null;
   const userAge = Number(sessionStorage.getItem("user_age") || "8");
 
   const [promptIndex, setPromptIndex] = useState(0);
@@ -59,7 +60,7 @@ export default function SpeechTest() {
     setError(null);
 
     try {
-      const data = await analyzeSpeech(sessionId, audioBlob, currentPrompt);
+      const data = await analyzeSpeech(sessionId!, audioBlob, currentPrompt);
       setResult(data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Speech analysis failed. Please try again.";

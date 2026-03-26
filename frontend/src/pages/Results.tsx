@@ -12,12 +12,13 @@ const STEP_LABELS = ["Handwriting", "Speech", "Results"];
 export default function Results() {
   const navigate = useNavigate();
 
-  const sessionId = Number(sessionStorage.getItem("session_id"));
+  const sessionIdStr = sessionStorage.getItem("session_id");
+  const sessionId = sessionIdStr ? Number(sessionIdStr) : null;
   const handwritingScore = sessionStorage.getItem("handwriting_score");
   const speechScore = sessionStorage.getItem("speech_score");
 
-  const hwScore = handwritingScore !== null ? Number(handwritingScore) : null;
-  const spScore = speechScore !== null ? Number(speechScore) : null;
+  const hwScore = handwritingScore ? Number(handwritingScore) : null;
+  const spScore = speechScore ? Number(speechScore) : null;
 
   const [result, setResult] = useState<CombinedResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +34,7 @@ export default function Results() {
       setError(null);
 
       try {
-        const data = await combineResults(sessionId, hwScore, spScore);
+        const data = await combineResults(sessionId!, hwScore, spScore);
         if (!cancelled) {
           setResult(data);
         }

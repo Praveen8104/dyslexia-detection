@@ -8,22 +8,36 @@ users_bp = Blueprint("users", __name__)
 @users_bp.route("/users", methods=["POST"])
 def create_user():
     data = request.get_json()
-    if not data or not data.get("name") or not data.get("age"):
+    if not data or not data.get("name") or data.get("age") is None:
         return jsonify({"error": "Name and age are required"}), 400
 
+    # Validate age
+    try:
+        age = int(data["age"])
+    except (ValueError, TypeError):
+        return jsonify({"error": "Age must be a valid number"}), 400
+
+    if age < 3 or age > 18:
+        return jsonify({"error": "Age must be between 3 and 18"}), 400
+
     user = User(
-        name=data["name"],
-        age=int(data["age"]),
+        name=data["name"].strip(),
+        age=age,
         gender=data.get("gender"),
         parent_email=data.get("parent_email"),
     )
-    db.session.add(user)
-    db.session.commit()
 
-    # Create a test session for this user
-    session = TestSession(user_id=user.id)
-    db.session.add(session)
-    db.session.commit()
+    try:
+        db.session.add(user)
+        db.session.commit()
+
+        # Create a test session for this user
+        session = TestSession(user_id=user.id)
+        db.session.add(session)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({"error": "Failed to create user. Please try again."}), 500
 
     return jsonify({
         "user": user.to_dict(),

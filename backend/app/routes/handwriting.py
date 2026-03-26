@@ -13,14 +13,17 @@ handwriting_bp = Blueprint("handwriting", __name__)
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 
-predictor = None
+_predictor = None
+_predictor_lock = __import__("threading").Lock()
 
 
 def get_predictor():
-    global predictor
-    if predictor is None:
-        predictor = HandwritingPredictor()
-    return predictor
+    global _predictor
+    if _predictor is None:
+        with _predictor_lock:
+            if _predictor is None:
+                _predictor = HandwritingPredictor()
+    return _predictor
 
 
 @handwriting_bp.route("/handwriting/analyze", methods=["POST"])
@@ -50,24 +53,28 @@ def analyze_handwriting():
     if ext not in ALLOWED_IMAGE_EXTENSIONS:
         return jsonify({"error": f"Invalid image format. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"}), 400
 
+    # Validate file size before saving
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+    if file_size > MAX_IMAGE_SIZE:
+        return jsonify({"error": "Image too large. Maximum size is 10MB."}), 400
+
     # Save uploaded image
     filename = f"{uuid.uuid4().hex}{ext}"
     upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "handwriting")
     filepath = os.path.join(upload_dir, filename)
     file.save(filepath)
 
-    # Validate file size
-    file_size = os.path.getsize(filepath)
-    if file_size > MAX_IMAGE_SIZE:
-        os.remove(filepath)
-        return jsonify({"error": "Image too large. Maximum size is 10MB."}), 400
-
     try:
         pred = get_predictor()
         result = pred.predict(filepath)
     except Exception as e:
         logger.error(f"Handwriting prediction failed: {e}")
-        os.remove(filepath)
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
         return jsonify({"error": "Analysis failed. Please try again with a clearer image."}), 500
 
     # Save to database
@@ -78,8 +85,17 @@ def analyze_handwriting():
         confidence=result["confidence"],
         markers=json.dumps(result.get("markers", [])),
     )
-    db.session.add(test)
-    db.session.commit()
+    try:
+        db.session.add(test)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to save handwriting result: {e}")
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
+        return jsonify({"error": "Failed to save results. Please try again."}), 500
 
     return jsonify({
         "id": test.id,

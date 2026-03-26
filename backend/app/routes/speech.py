@@ -11,14 +11,17 @@ speech_bp = Blueprint("speech", __name__)
 
 MAX_AUDIO_SIZE = 10 * 1024 * 1024  # 10MB
 
-predictor = None
+_predictor = None
+_predictor_lock = __import__("threading").Lock()
 
 
 def get_predictor():
-    global predictor
-    if predictor is None:
-        predictor = SpeechPredictor()
-    return predictor
+    global _predictor
+    if _predictor is None:
+        with _predictor_lock:
+            if _predictor is None:
+                _predictor = SpeechPredictor()
+    return _predictor
 
 
 @speech_bp.route("/speech/analyze", methods=["POST"])
@@ -42,20 +45,29 @@ def analyze_speech():
 
     file = request.files["audio"]
     ext = os.path.splitext(file.filename)[1].lower() or ".wav"
+
+    # Validate audio format
+    allowed_audio_ext = {".wav", ".mp3", ".webm", ".ogg", ".m4a", ".flac", ".aac"}
+    if ext not in allowed_audio_ext:
+        return jsonify({
+            "error": f"Unsupported audio format '{ext}'. Allowed: {', '.join(sorted(allowed_audio_ext))}"
+        }), 400
+
+    # Validate file size before saving
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+    if file_size > MAX_AUDIO_SIZE:
+        return jsonify({"error": "Audio file too large. Maximum size is 10MB."}), 400
+
     filename = f"{uuid.uuid4().hex}{ext}"
     upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "audio")
     filepath = os.path.join(upload_dir, filename)
     file.save(filepath)
 
-    # Validate file size
-    file_size = os.path.getsize(filepath)
-    if file_size > MAX_AUDIO_SIZE:
-        os.remove(filepath)
-        return jsonify({"error": "Audio file too large. Maximum size is 10MB."}), 400
-
     # Get child age for age-appropriate thresholds
     child_age = None
-    if session.user and session.user.age:
+    if session.user and session.user.age is not None:
         child_age = session.user.age
 
     try:
@@ -63,12 +75,18 @@ def analyze_speech():
         result = pred.predict(filepath, expected_text, child_age=child_age)
     except Exception as e:
         logger.error(f"Speech prediction failed: {e}")
-        os.remove(filepath)
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
         return jsonify({"error": "Speech analysis failed. Please try recording again."}), 500
 
     # Validate audio duration (signal must be at least 1 second)
     if result.get("reading_speed_wpm", 0) == 0:
-        os.remove(filepath)
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
         return jsonify({"error": "Audio too short. Please record for at least 2 seconds."}), 400
 
     # Save to database
@@ -82,8 +100,17 @@ def analyze_speech():
         hesitation_count=result.get("hesitation_count"),
         silence_ratio=result.get("silence_ratio"),
     )
-    db.session.add(test)
-    db.session.commit()
+    try:
+        db.session.add(test)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to save speech result: {e}")
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
+        return jsonify({"error": "Failed to save results. Please try again."}), 500
 
     return jsonify({
         "id": test.id,

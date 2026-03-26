@@ -56,9 +56,14 @@ def combine_results():
         logger.error(f"Combined scoring failed: {e}")
         return jsonify({"error": "Scoring calculation failed"}), 500
 
-    session.combined_score = result["combined_score"]
-    session.risk_level = result["risk_level"]
-    db.session.commit()
+    try:
+        session.combined_score = result["combined_score"]
+        session.risk_level = result["risk_level"]
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update session: {e}")
+        return jsonify({"error": "Failed to save results. Please try again."}), 500
 
     return jsonify({
         "session_id": session.id,

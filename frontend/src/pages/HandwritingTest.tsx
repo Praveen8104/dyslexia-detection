@@ -12,7 +12,8 @@ const STEP_LABELS = ["Handwriting", "Speech", "Results"];
 
 export default function HandwritingTest() {
   const navigate = useNavigate();
-  const sessionId = Number(sessionStorage.getItem("session_id"));
+  const sessionIdStr = sessionStorage.getItem("session_id");
+  const sessionId = sessionIdStr ? Number(sessionIdStr) : null;
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,7 +42,7 @@ export default function HandwritingTest() {
     setError(null);
 
     try {
-      const data = await analyzeHandwriting(sessionId, imageFile);
+      const data = await analyzeHandwriting(sessionId!, imageFile);
       setResult(data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Analysis failed. Please try again.";

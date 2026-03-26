@@ -5,6 +5,7 @@ interface UseAudioRecorderReturn {
   duration: number;
   audioBlob: Blob | null;
   audioUrl: string | null;
+  error: string | null;
   startRecording: () => Promise<void>;
   stopRecording: () => void;
   resetRecording: () => void;
@@ -15,6 +16,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const [duration, setDuration] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -34,6 +36,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
   const startRecording = useCallback(async () => {
     try {
+      setError(null);
       chunksRef.current = [];
       setAudioBlob(null);
       if (audioUrl) {
@@ -69,8 +72,15 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       intervalRef.current = setInterval(() => {
         setDuration((prev) => prev + 1);
       }, 1000);
-    } catch (error) {
-      console.error("Failed to start recording:", error);
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+      if (err instanceof DOMException && err.name === "NotAllowedError") {
+        setError("Microphone access denied. Please allow microphone permission in your browser settings and try again.");
+      } else if (err instanceof DOMException && err.name === "NotFoundError") {
+        setError("No microphone found. Please connect a microphone and try again.");
+      } else {
+        setError("Could not access microphone. Please check your browser settings.");
+      }
       cleanup();
     }
   }, [audioUrl, cleanup]);
@@ -112,6 +122,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     duration,
     audioBlob,
     audioUrl,
+    error,
     startRecording,
     stopRecording,
     resetRecording,

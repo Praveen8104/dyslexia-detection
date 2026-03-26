@@ -223,7 +223,7 @@ class HandwritingPredictor:
         risk_score = min(risk_score, 0.90)
 
         # Distribute risk across Reversal and Corrected
-        has_reversal_signs = analysis.get("irregular_spacing") or asymmetry < 0.08 if 'asymmetry' in dir() else False
+        has_reversal_signs = analysis.get("irregular_spacing") or ('asymmetry' in locals() and asymmetry < 0.08)
         if has_reversal_signs:
             reversal_prob = risk_score * 0.6
             corrected_prob = risk_score * 0.4

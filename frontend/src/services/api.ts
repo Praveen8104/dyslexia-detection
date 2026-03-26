@@ -10,7 +10,25 @@ import type {
 
 const api = axios.create({
   baseURL: '/api',
+  timeout: 60000, // 60s timeout for ML inference
 });
+
+// Extract meaningful error messages from backend responses
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.data?.error) {
+      return Promise.reject(new Error(error.response.data.error));
+    }
+    if (error.code === 'ECONNABORTED') {
+      return Promise.reject(new Error('Request timed out. Please try again.'));
+    }
+    if (!error.response) {
+      return Promise.reject(new Error('Network error. Please check your connection.'));
+    }
+    return Promise.reject(new Error(`Request failed with status code ${error.response.status}`));
+  }
+);
 
 // Users
 export async function createUser(data: CreateUserPayload): Promise<{ user: User; session_id: number }> {
