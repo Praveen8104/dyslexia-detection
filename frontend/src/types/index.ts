@@ -23,6 +23,14 @@ export interface SpeechResult {
   hesitation_count: number;
   silence_ratio: number;
   risk_score: number;
+  // Transcription & reading accuracy
+  transcription?: string;
+  reading_accuracy?: number | null;
+  wer?: number | null;
+  substitutions?: number;
+  deletions?: number;
+  insertions?: number;
+  error_details?: string;
 }
 
 export interface CombinedResult {
@@ -48,7 +56,6 @@ export interface TestSession {
 export interface HandwritingTestRecord {
   id: number;
   session_id: number;
-  image_path: string;
   prediction: string;
   confidence: number;
   markers: string;
@@ -58,14 +65,19 @@ export interface HandwritingTestRecord {
 export interface SpeechTestRecord {
   id: number;
   session_id: number;
-  audio_path: string;
-  transcript: string | null;
   expected_text: string;
   prediction: string;
   confidence: number;
   reading_speed_wpm: number;
   hesitation_count: number;
   silence_ratio: number;
+  transcript: string | null;
+  reading_accuracy: number | null;
+  wer: number | null;
+  substitutions: number;
+  deletions: number;
+  insertions: number;
+  error_details: string | null;
   created_at: string;
 }
 

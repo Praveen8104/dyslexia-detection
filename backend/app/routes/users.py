@@ -17,8 +17,8 @@ def create_user():
     except (ValueError, TypeError):
         return jsonify({"error": "Age must be a valid number"}), 400
 
-    if age < 3 or age > 18:
-        return jsonify({"error": "Age must be between 3 and 18"}), 400
+    if age < 6 or age > 12:
+        return jsonify({"error": "Age must be between 6 and 12. This screening tool is designed for children aged 6-12."}), 400
 
     user = User(
         name=data["name"].strip(),

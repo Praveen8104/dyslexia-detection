@@ -82,7 +82,7 @@ class TestUserAPI:
             content_type="application/json",
         )
         assert response.status_code == 400
-        assert "between 3 and 18" in response.get_json()["error"]
+        assert "between 6 and 12" in response.get_json()["error"]
 
     def test_create_user_age_too_high(self, client):
         response = client.post(
@@ -91,7 +91,7 @@ class TestUserAPI:
             content_type="application/json",
         )
         assert response.status_code == 400
-        assert "between 3 and 18" in response.get_json()["error"]
+        assert "between 6 and 12" in response.get_json()["error"]
 
     def test_create_user_with_optional_fields(self, client):
         response = client.post(

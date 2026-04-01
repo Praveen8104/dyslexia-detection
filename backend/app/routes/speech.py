@@ -99,6 +99,13 @@ def analyze_speech():
         reading_speed_wpm=result.get("reading_speed_wpm"),
         hesitation_count=result.get("hesitation_count"),
         silence_ratio=result.get("silence_ratio"),
+        transcript=result.get("transcription", ""),
+        reading_accuracy=result.get("reading_accuracy"),
+        wer=result.get("wer"),
+        substitutions=result.get("substitutions", 0),
+        deletions=result.get("deletions", 0),
+        insertions=result.get("insertions", 0),
+        error_details=result.get("error_details", ""),
     )
     try:
         db.session.add(test)
@@ -120,4 +127,12 @@ def analyze_speech():
         "hesitation_count": result.get("hesitation_count"),
         "silence_ratio": result.get("silence_ratio"),
         "risk_score": result["risk_score"],
+        # Transcription & reading accuracy
+        "transcription": result.get("transcription", ""),
+        "reading_accuracy": result.get("reading_accuracy"),
+        "wer": result.get("wer"),
+        "substitutions": result.get("substitutions", 0),
+        "deletions": result.get("deletions", 0),
+        "insertions": result.get("insertions", 0),
+        "error_details": result.get("error_details", ""),
     })

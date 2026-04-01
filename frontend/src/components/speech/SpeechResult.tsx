@@ -7,10 +7,18 @@ interface SpeechResultData {
   hesitation_count: number;
   silence_ratio: number;
   risk_score: number;
+  transcription?: string;
+  reading_accuracy?: number | null;
+  wer?: number | null;
+  substitutions?: number;
+  deletions?: number;
+  insertions?: number;
+  error_details?: string;
 }
 
 interface SpeechResultProps {
   result: SpeechResultData;
+  expectedText?: string;
 }
 
 function getRiskColor(score: number): string {
@@ -23,6 +31,12 @@ function getRiskLabel(score: number): string {
   if (score <= 30) return "Low Risk";
   if (score <= 60) return "Moderate Risk";
   return "High Risk";
+}
+
+function getAccuracyColor(accuracy: number): string {
+  if (accuracy >= 90) return "#43E97B";
+  if (accuracy >= 70) return "#FFB347";
+  return "#FF6584";
 }
 
 const container = {
@@ -38,9 +52,11 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
-export default function SpeechResult({ result }: SpeechResultProps) {
+export default function SpeechResult({ result, expectedText }: SpeechResultProps) {
   const riskColor = getRiskColor(result.risk_score);
   const riskLabel = getRiskLabel(result.risk_score);
+  const hasTranscription = result.transcription && result.transcription.length > 0;
+  const hasAccuracy = result.reading_accuracy !== null && result.reading_accuracy !== undefined;
 
   return (
     <motion.div
@@ -64,6 +80,68 @@ export default function SpeechResult({ result }: SpeechResultProps) {
           </span>
         </span>
       </motion.div>
+
+      {/* Transcription comparison */}
+      {hasTranscription && (
+        <motion.div
+          variants={item}
+          className="rounded-xl border border-[#6C63FF]/15 bg-[#6C63FF]/5 p-5 space-y-3"
+        >
+          <h3 className="text-sm font-bold text-[#6C63FF]">Reading Accuracy Analysis</h3>
+
+          {expectedText && (
+            <div>
+              <p className="text-xs font-medium text-gray-400 mb-1">Expected Text</p>
+              <p className="text-sm text-gray-700 font-medium">{expectedText}</p>
+            </div>
+          )}
+
+          <div>
+            <p className="text-xs font-medium text-gray-400 mb-1">What the child read</p>
+            <p className="text-sm text-gray-700 font-medium italic">
+              &ldquo;{result.transcription}&rdquo;
+            </p>
+          </div>
+
+          {hasAccuracy && (
+            <div className="flex items-center gap-4 pt-1">
+              <div>
+                <p className="text-xs font-medium text-gray-400">Reading Accuracy</p>
+                <p
+                  className="text-2xl font-bold"
+                  style={{ color: getAccuracyColor(result.reading_accuracy!) }}
+                >
+                  {result.reading_accuracy!.toFixed(1)}%
+                </p>
+              </div>
+              {(result.substitutions || result.deletions || result.insertions) ? (
+                <div className="flex-1 space-y-1">
+                  {(result.substitutions ?? 0) > 0 && (
+                    <p className="text-xs text-gray-500">
+                      <span className="font-semibold text-[#FF6584]">{result.substitutions}</span>{" "}
+                      word(s) substituted
+                    </p>
+                  )}
+                  {(result.deletions ?? 0) > 0 && (
+                    <p className="text-xs text-gray-500">
+                      <span className="font-semibold text-[#FFB347]">{result.deletions}</span>{" "}
+                      word(s) omitted
+                    </p>
+                  )}
+                  {(result.insertions ?? 0) > 0 && (
+                    <p className="text-xs text-gray-500">
+                      <span className="font-semibold text-[#6C63FF]">{result.insertions}</span>{" "}
+                      word(s) inserted
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs font-medium text-[#43E97B]">All words read correctly</p>
+              )}
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Metrics grid */}
       <motion.div

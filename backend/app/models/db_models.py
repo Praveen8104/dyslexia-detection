@@ -64,7 +64,6 @@ class HandwritingTest(db.Model):
         return {
             "id": self.id,
             "session_id": self.session_id,
-            "image_path": self.image_path,
             "prediction": self.prediction,
             "confidence": self.confidence,
             "markers": self.markers,
@@ -85,19 +84,30 @@ class SpeechTest(db.Model):
     reading_speed_wpm = db.Column(db.Float)
     hesitation_count = db.Column(db.Integer)
     silence_ratio = db.Column(db.Float)
+    reading_accuracy = db.Column(db.Float)
+    wer = db.Column(db.Float)
+    substitutions = db.Column(db.Integer)
+    deletions = db.Column(db.Integer)
+    insertions = db.Column(db.Integer)
+    error_details = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
             "id": self.id,
             "session_id": self.session_id,
-            "audio_path": self.audio_path,
-            "transcript": self.transcript,
             "expected_text": self.expected_text,
             "prediction": self.prediction,
             "confidence": self.confidence,
             "reading_speed_wpm": self.reading_speed_wpm,
             "hesitation_count": self.hesitation_count,
             "silence_ratio": self.silence_ratio,
+            "transcript": self.transcript,
+            "reading_accuracy": self.reading_accuracy,
+            "wer": self.wer,
+            "substitutions": self.substitutions,
+            "deletions": self.deletions,
+            "insertions": self.insertions,
+            "error_details": self.error_details,
             "created_at": self.created_at.isoformat(),
         }

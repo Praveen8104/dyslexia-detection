@@ -217,7 +217,7 @@ export default function SpeechTest() {
             animate={{ opacity: 1, y: 0 }}
             className="mt-8 space-y-6"
           >
-            <SpeechResult result={result} />
+            <SpeechResult result={result} expectedText={currentPrompt} />
 
             <div className="text-center">
               <button

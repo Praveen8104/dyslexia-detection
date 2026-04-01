@@ -10,6 +10,7 @@ MODEL_PATH = os.path.join(
 )
 
 # Age-based WPM thresholds (below these = concern)
+# Based on Hasbrouck & Tindal (2017) oral reading fluency norms
 AGE_WPM_THRESHOLDS = {
     6: 60, 7: 80, 8: 100, 9: 110, 10: 120, 11: 130, 12: 140,
 }
@@ -42,6 +43,7 @@ class SpeechPredictor:
             count_hesitations, estimate_reading_speed,
         )
         from app.ml.speech.feature_extractor import extract_mfcc_features
+        from app.ml.speech.transcriber import transcribe_audio, analyze_reading_errors
 
         signal, sr = load_audio(audio_path)
 
@@ -59,9 +61,14 @@ class SpeechPredictor:
         hesitation_count = count_hesitations(signal, sr)
         silence_ratio = compute_silence_ratio(signal, sr)
 
+        # Transcribe audio and compute reading accuracy
+        transcription = transcribe_audio(audio_path)
+        reading_errors = analyze_reading_errors(expected_text, transcription)
+
         # Rule-based risk score (always computed)
         heuristic_probs = self._rule_based_score(
-            reading_speed, hesitation_count, silence_ratio, child_age
+            reading_speed, hesitation_count, silence_ratio,
+            child_age, reading_errors
         )
 
         # Combine ML + heuristics if model is available
@@ -90,11 +97,20 @@ class SpeechPredictor:
             "reading_speed_wpm": round(reading_speed, 1),
             "hesitation_count": hesitation_count,
             "silence_ratio": round(silence_ratio, 4),
+            # New transcription fields
+            "transcription": reading_errors["transcription"],
+            "reading_accuracy": reading_errors["reading_accuracy"],
+            "wer": reading_errors["wer"],
+            "substitutions": reading_errors["substitutions"],
+            "deletions": reading_errors["deletions"],
+            "insertions": reading_errors["insertions"],
+            "error_details": reading_errors["error_details"],
         }
 
     def _rule_based_score(self, wpm: float, hesitations: int,
                           silence_ratio: float,
-                          child_age: int = None) -> np.ndarray:
+                          child_age: int = None,
+                          reading_errors: dict = None) -> np.ndarray:
         """Compute risk probability using rule-based heuristics."""
         risk = 0.0
 
@@ -125,6 +141,28 @@ class SpeechPredictor:
             risk += 0.12
         elif silence_ratio > 0.25:
             risk += 0.05
+
+        # Reading accuracy (from transcription) - key dyslexia indicator
+        # Word substitutions, omissions, and insertions directly reflect
+        # phonological processing difficulties characteristic of dyslexia
+        if reading_errors and reading_errors.get("wer") is not None:
+            wer = reading_errors["wer"]
+            if wer > 0.5:
+                risk += 0.30  # More than half the words wrong
+            elif wer > 0.3:
+                risk += 0.20
+            elif wer > 0.15:
+                risk += 0.10
+            elif wer > 0.0:
+                risk += 0.05
+
+            # Extra weight for substitutions (classic dyslexia pattern:
+            # confusing similar-looking/sounding words)
+            subs = reading_errors.get("substitutions", 0)
+            if subs >= 3:
+                risk += 0.10
+            elif subs >= 1:
+                risk += 0.05
 
         risk = min(risk, 0.95)
         return np.array([1.0 - risk, risk])

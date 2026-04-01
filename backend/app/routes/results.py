@@ -102,17 +102,18 @@ def get_history(user_id):
 @results_bp.route("/results/all", methods=["GET"])
 def get_all_sessions():
     from app.models.db_models import User
+    from sqlalchemy.orm import joinedload
 
     sessions = (
         TestSession.query
+        .options(joinedload(TestSession.user))
         .order_by(TestSession.created_at.desc())
         .all()
     )
     result = []
     for s in sessions:
         d = s.to_dict()
-        user = db.session.get(User, s.user_id)
-        d["user_name"] = user.name if user else "Unknown"
-        d["user_age"] = user.age if user else None
+        d["user_name"] = s.user.name if s.user else "Unknown"
+        d["user_age"] = s.user.age if s.user else None
         result.append(d)
     return jsonify(result)

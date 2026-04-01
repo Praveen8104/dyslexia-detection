@@ -206,6 +206,26 @@ export default function TestDetail({ session, onClose }: TestDetailProps) {
                     </p>
                   </div>
                 )}
+
+                {/* Transcription & Reading Accuracy */}
+                {sp.transcript && (
+                  <div className="mt-3 rounded-lg border border-[#6C63FF]/15 bg-[#6C63FF]/5 p-3 space-y-2">
+                    <p className="text-xs font-bold text-[#6C63FF]">Reading Accuracy</p>
+                    <p className="text-xs text-gray-500">
+                      Child read: <span className="italic font-medium text-gray-700">&ldquo;{sp.transcript}&rdquo;</span>
+                    </p>
+                    {sp.reading_accuracy !== null && (
+                      <p className="text-sm font-bold" style={{
+                        color: sp.reading_accuracy >= 90 ? "#43E97B" : sp.reading_accuracy >= 70 ? "#FFB347" : "#FF6584"
+                      }}>
+                        {sp.reading_accuracy.toFixed(1)}% accurate
+                      </p>
+                    )}
+                    {sp.error_details && (
+                      <p className="text-[10px] text-gray-400">{sp.error_details}</p>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-gray-400 italic">No speech test taken</p>

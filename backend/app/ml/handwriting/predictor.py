@@ -36,6 +36,9 @@ class HandwritingPredictor:
     def predict(self, image_path: str) -> dict:
         from app.ml.handwriting.preprocessor import preprocess_image, IMG_SIZE
 
+        # Validate the image contains handwriting before analysis
+        self._validate_handwriting_image(image_path)
+
         img = preprocess_image(image_path)
 
         # Always compute heuristic score from the original image
@@ -113,6 +116,7 @@ class HandwritingPredictor:
 
         analysis = {}
         risk_score = 0.0
+        asymmetry = 1.0  # default: fully asymmetric (no reversal)
 
         # 1. Ink density - how much writing is on the page
         ink_density = np.sum(binary > 0) / binary.size
@@ -223,7 +227,7 @@ class HandwritingPredictor:
         risk_score = min(risk_score, 0.90)
 
         # Distribute risk across Reversal and Corrected
-        has_reversal_signs = analysis.get("irregular_spacing") or ('asymmetry' in locals() and asymmetry < 0.08)
+        has_reversal_signs = analysis.get("irregular_spacing") or asymmetry < 0.08
         if has_reversal_signs:
             reversal_prob = risk_score * 0.6
             corrected_prob = risk_score * 0.4
@@ -241,3 +245,45 @@ class HandwritingPredictor:
         ])
 
         return probs, analysis
+
+    def _validate_handwriting_image(self, image_path: str):
+        """Reject images that clearly don't contain handwriting.
+
+        Checks for:
+        - Blank / nearly blank images
+        - Images with no stroke-like content (e.g., photos of objects)
+        - Fully saturated / solid color images
+        """
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError("Could not read the image file. Please upload a valid image.")
+
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+        ink_density = np.sum(binary > 0) / binary.size
+
+        # Blank or nearly blank image
+        if ink_density < 0.005:
+            raise ValueError(
+                "The image appears to be blank or nearly blank. "
+                "Please upload a photo of handwriting."
+            )
+
+        # Overly saturated (solid dark image, not handwriting)
+        if ink_density > 0.85:
+            raise ValueError(
+                "The image appears to be too dark or solid. "
+                "Please upload a clear photo of handwriting on a light background."
+            )
+
+        # Check for stroke-like structures (contours)
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        min_area = binary.size * 0.0005
+        valid_contours = [c for c in contours if cv2.contourArea(c) > min_area]
+
+        if len(valid_contours) < 1:
+            raise ValueError(
+                "No handwriting detected in the image. "
+                "Please upload a clear photo of written text."
+            )
