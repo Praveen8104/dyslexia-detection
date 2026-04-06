@@ -109,11 +109,30 @@ Open http://localhost:3000 in your browser. The Vite dev server proxies `/api` r
 
 ### Docker (Production)
 
+This repository includes:
+- `docker-compose.yml` for running prebuilt images (best for sharing with friends)
+- `docker-compose.build.yml` for building images locally
+- `.env.example` for image tag configuration
+
+#### A) Run prebuilt images (recommended for friends)
+
 ```bash
-docker-compose up --build
+cp .env.example .env
+# edit .env with your published image tags
+docker compose pull
+docker compose up -d
 ```
 
-This starts the backend on port 5000 and the frontend (via nginx) on port 80.
+Open http://localhost:3000.
+
+#### B) Build and run locally
+
+```bash
+docker compose -f docker-compose.build.yml build
+docker compose up -d
+```
+
+This starts the backend in a container (internal port 5000) and the frontend (nginx) on host port 3000.
 
 ### Running Tests
 
