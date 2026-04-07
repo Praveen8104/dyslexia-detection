@@ -32,7 +32,7 @@ Both scores are combined into a single risk level (**Low / Moderate / High**) wi
 | Backend | Python 3.11, Flask 3.0, Flask-SQLAlchemy, Gunicorn |
 | ML/AI | TensorFlow/Keras 2.15, OpenCV, librosa, pydub |
 | Database | SQLite (dev) / PostgreSQL (prod) |
-| Deployment | Docker Compose, nginx |
+| Deployment | Local (Python + Node), nginx |
 
 ## Project Structure
 
@@ -50,7 +50,7 @@ dyslexia-detection/
 │   │   ├── services/api.ts     Axios API client with error interceptor
 │   │   └── types/index.ts      TypeScript interfaces
 │   ├── vite.config.ts
-│   └── Dockerfile
+│   └── nginx.conf
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py         Flask app factory, CORS, DB init
@@ -64,8 +64,7 @@ dyslexia-detection/
 │   ├── saved_models/           Trained .keras model files
 │   ├── tests/                  51 pytest test cases
 │   ├── data/                   Datasets (gitignored)
-│   └── Dockerfile
-├── docker-compose.yml
+│   └── requirements.txt
 └── docs/                       Demo guide, sample images, project documentation
 ```
 
@@ -106,33 +105,6 @@ npm run dev
 ```
 
 Open http://localhost:3000 in your browser. The Vite dev server proxies `/api` requests to the backend automatically.
-
-### Docker (Production)
-
-This repository includes:
-- `docker-compose.yml` for running prebuilt images (best for sharing with friends)
-- `docker-compose.build.yml` for building images locally
-- `.env.example` for image tag configuration
-
-#### A) Run prebuilt images (recommended for friends)
-
-```bash
-cp .env.example .env
-# edit .env with your published image tags
-docker compose pull
-docker compose up -d
-```
-
-Open http://localhost:3000.
-
-#### B) Build and run locally
-
-```bash
-docker compose -f docker-compose.build.yml build
-docker compose up -d
-```
-
-This starts the backend in a container (internal port 5000) and the frontend (nginx) on host port 3000.
 
 ### Running Tests
 
