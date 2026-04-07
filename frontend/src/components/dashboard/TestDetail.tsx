@@ -18,14 +18,6 @@ const formatDate = (iso: string): string => {
   });
 };
 
-function getRiskColor(level: string | null): string {
-  if (!level) return "#94A3B8";
-  const l = level.toLowerCase();
-  if (l.includes("low")) return "#43E97B";
-  if (l.includes("moderate")) return "#FFB347";
-  return "#FF6584";
-}
-
 export default function TestDetail({ session, onClose }: TestDetailProps) {
   const hw = session.handwriting_tests[0] ?? null;
   const sp = session.speech_tests[0] ?? null;
