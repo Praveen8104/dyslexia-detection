@@ -124,6 +124,28 @@ python -m pytest tests/ -v
 - Audio processor (silence ratio, hesitations, reading speed)
 - Feature extractor (MFCC output shape, short audio padding)
 
+### Docker
+
+If you want Windows users to run the project without installing Python, Node, ffmpeg, or TensorFlow manually, Docker is the cleanest option.
+
+```bash
+docker compose up --build
+```
+
+Then open http://localhost:3000.
+
+This starts two containers:
+- `backend` on port 5001 for the Flask API
+- `frontend` on port 3000 for the React app, served through Nginx
+
+The frontend container proxies `/api` requests to the backend container, so the browser only needs to talk to `localhost:3000`.
+
+To stop everything and remove the persisted database/uploads volumes:
+
+```bash
+docker compose down -v
+```
+
 ## ML Models
 
 ### Handwriting -- EfficientNetB0 (Transfer Learning)

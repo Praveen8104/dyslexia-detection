@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: sqlite:////app/data/dyslexia.db
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      HOST: 0.0.0.0
+      PORT: 5001
+    ports:
+      - "5001:5001"
+    volumes:
+      - backend-data:/app/data
+      - backend-uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  backend-data:
+  backend-uploads:
